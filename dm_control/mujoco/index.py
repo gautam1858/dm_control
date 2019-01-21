@@ -89,8 +89,6 @@ import abc
 import collections
 import weakref
 
-# Internal dependencies.
-
 from dm_control.mujoco.wrapper import util
 from dm_control.mujoco.wrapper.mjbindings import sizes
 import numpy as np
@@ -112,6 +110,7 @@ _COLUMN_NAMES = {
     'mat': ['xx', 'xy', 'xz',
             'yx', 'yy', 'yz',
             'zx', 'zy', 'zz'],
+    'rgba': ['r', 'g', 'b', 'a'],
 }
 
 # Mapping from keys of _COLUMN_NAMES to sets of field names whose columns are
@@ -168,6 +167,13 @@ _COLUMN_ID_TO_FIELDS = {
         'geom_xmat',
         'site_xmat',
         'cam_xmat',
+    ]),
+    'rgba': set([
+        'geom_rgba',
+        'site_rgba',
+        'skin_rgba',
+        'mat_rgba',
+        'tendon_rgba',
     ])
 }
 

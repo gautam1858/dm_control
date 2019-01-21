@@ -142,7 +142,8 @@ class ElementTest(parameterized.TestCase):
         self.assertIn(child_name, dir(mjcf_element))
         child = getattr(mjcf_element, child_name)
         self.assertIn(child, children)
-        with self.assertRaisesRegexp(AttributeError, 'can\'t set attribute'):
+        with six.assertRaisesRegex(
+            self, AttributeError, 'can\'t set attribute'):
           setattr(mjcf_element, child_name, 'value')
         if recursive:
           self._test_children(child, recursive=True)
@@ -157,11 +158,14 @@ class ElementTest(parameterized.TestCase):
     def test_invalid_attr_recursively(mjcf_element):
       self.assertNotHasAttr(mjcf_element, invalid_attrib_name)
       self.assertNotIn(invalid_attrib_name, dir(mjcf_element))
-      with self.assertRaisesRegexp(AttributeError, 'object has no attribute'):
+      with six.assertRaisesRegex(
+          self, AttributeError, 'object has no attribute'):
         getattr(mjcf_element, invalid_attrib_name)
-      with self.assertRaisesRegexp(AttributeError, 'can\'t set attribute'):
+      with six.assertRaisesRegex(
+          self, AttributeError, 'can\'t set attribute'):
         setattr(mjcf_element, invalid_attrib_name, 'value')
-      with self.assertRaisesRegexp(AttributeError, 'object has no attribute'):
+      with six.assertRaisesRegex(
+          self, AttributeError, 'object has no attribute'):
         delattr(mjcf_element, invalid_attrib_name)
       for child in mjcf_element.all_children():
         test_invalid_attr_recursively(child)
@@ -193,20 +197,24 @@ class ElementTest(parameterized.TestCase):
                           expected_values=body_foo_inertial_attributes)
     self._test_children(body_foo_inertial)
 
-    with self.assertRaisesRegexp(ValueError, '<inertial> child already exists'):
+    with six.assertRaisesRegex(
+        self, ValueError, '<inertial> child already exists'):
       body_foo.add('inertial', **body_foo_inertial_attributes)
 
     # non-repeated, non-on-demand elements
-    with self.assertRaisesRegexp(ValueError, '<compiler> child already exists'):
+    with six.assertRaisesRegex(
+        self, ValueError, '<compiler> child already exists'):
       mujoco.add('compiler')
     self.assertIsNotNone(mujoco.compiler)
-    with self.assertRaisesRegexp(ValueError, '<default> child already exists'):
+    with six.assertRaisesRegex(
+        self, ValueError, '<default> child already exists'):
       mujoco.add('default')
     self.assertIsNotNone(mujoco.default)
 
   def testAddWithInvalidAttribute(self):
     mujoco = element.RootElement(model='test')
-    with self.assertRaisesRegexp(AttributeError, 'not a valid attribute'):
+    with six.assertRaisesRegex(
+        self, AttributeError, 'not a valid attribute'):
       mujoco.worldbody.add('body', name='foo', invalid_attribute='some_value')
     self.assertFalse(mujoco.worldbody.body)
     self.assertIsNone(mujoco.worldbody.find('body', 'foo'))
@@ -326,7 +334,8 @@ class ElementTest(parameterized.TestCase):
     subsubmujoco = copy.copy(mujoco)
     subsubmujoco.model = 'subsubmodel'
 
-    with self.assertRaisesRegexp(ValueError, 'Cannot merge a model to itself'):
+    with six.assertRaisesRegex(
+        self, ValueError, 'Cannot merge a model to itself'):
       mujoco.attach(mujoco)
 
     attachment_site = submujoco.find('site', 'attachment')
@@ -340,19 +349,22 @@ class ElementTest(parameterized.TestCase):
                           parent=attachment_site.parent, root=submujoco)
     self.assertEqual(
         subsubmodel_frame.to_xml_string().split('\n')[0],
-        '<body pos="0.1 0.1 0.1" quat="0. 1. 0. 0." name="subsubmodel/">')
+        '<body '
+        'pos="0.10000000000000001 0.10000000000000001 0.10000000000000001" '
+        'quat="0 1 0 0" '
+        'name="subsubmodel/">')
     self.assertEqual(subsubmodel_frame.all_children(),
                      subsubmujoco.worldbody.all_children())
 
-    with self.assertRaisesRegexp(ValueError, 'already attached elsewhere'):
+    with six.assertRaisesRegex(self, ValueError, 'already attached elsewhere'):
       mujoco.attach(subsubmujoco)
 
-    with self.assertRaisesRegexp(ValueError, 'Expected a mjcf.RootElement'):
+    with six.assertRaisesRegex(self, ValueError, 'Expected a mjcf.RootElement'):
       mujoco.attach(submujoco.contact)
 
     submujoco.option.flag.gravity = 'enable'
-    with self.assertRaisesRegexp(
-        ValueError, 'Conflicting values for attribute `gravity`'):
+    with six.assertRaisesRegex(self, ValueError,
+                               'Conflicting values for attribute `gravity`'):
       mujoco.attach(submujoco)
     submujoco.option.flag.gravity = 'disable'
 
@@ -485,19 +497,22 @@ class ElementTest(parameterized.TestCase):
     subsubmujoco_frame = submujoco.find('attachment_frame', 'subsubmodel')
     subsubmujoco_frame_xml = subsubmujoco_frame.to_xml_string(
         pretty_print=False, prefix_root=mujoco.namescope)
-    self.assertStartsWith(subsubmujoco_frame_xml,
-                          '<body pos="0.1 0.1 0.1" quat="0. 1. 0. 0." '
-                          'name="submodel/subsubmodel/">')
+    self.assertStartsWith(
+        subsubmujoco_frame_xml,
+        '<body '
+        'pos="0.10000000000000001 0.10000000000000001 0.10000000000000001" '
+        'quat="0 1 0 0" '
+        'name="submodel/subsubmodel/">')
     self.assertEqual(subsubmujoco_frame.full_identifier,
                      'submodel/subsubmodel/')
-    with self.assertRaisesRegexp(AttributeError, 'not a valid child'):
+    with six.assertRaisesRegex(self, AttributeError, 'not a valid child'):
       subsubmujoco_frame.add('freejoint')
     hinge_joint = subsubmujoco_frame.add('joint', type='hinge', axis=[1, 2, 3])
     hinge_joint_xml = hinge_joint.to_xml_string(
         pretty_print=False, prefix_root=mujoco.namescope)
     self.assertEqual(
         hinge_joint_xml,
-        '<joint class="submodel/" type="hinge" axis="1. 2. 3." '
+        '<joint class="submodel/" type="hinge" axis="1 2 3" '
         'name="submodel/subsubmodel/"/>')
     self.assertEqual(hinge_joint.full_identifier, 'submodel/subsubmodel/')
 
@@ -555,8 +570,8 @@ class ElementTest(parameterized.TestCase):
     submujoco.find('site', 'attachment').attach(subsubmujoco)
     mujoco.attach(submujoco)
 
-    with self.assertRaisesRegexp(
-        ValueError, r'use remove\(affect_attachments=True\)'):
+    with six.assertRaisesRegex(self, ValueError,
+                               r'use remove\(affect_attachments=True\)'):
       del mujoco.option
 
     mujoco.option.remove(affect_attachments=True)
@@ -568,8 +583,8 @@ class ElementTest(parameterized.TestCase):
       self.assertEqual(
           root.option.flag.to_xml_string(pretty_print=False), '<flag/>')
 
-    with self.assertRaisesRegexp(
-        ValueError, r'use remove\(affect_attachments=True\)'):
+    with six.assertRaisesRegex(self, ValueError,
+                               r'use remove\(affect_attachments=True\)'):
       del mujoco.contact
 
     mujoco.contact.remove(affect_attachments=True)
@@ -649,9 +664,9 @@ class ElementTest(parameterized.TestCase):
 
   def testFindInvalidNamespace(self):
     mjcf_model = mjcf.RootElement()
-    with self.assertRaisesRegexp(ValueError, 'not a valid namespace'):
+    with six.assertRaisesRegex(self, ValueError, 'not a valid namespace'):
       mjcf_model.find('jiont', 'foo')
-    with self.assertRaisesRegexp(ValueError, 'not a valid namespace'):
+    with six.assertRaisesRegex(self, ValueError, 'not a valid namespace'):
       mjcf_model.find_all('goem')
 
   def testEnterScope(self):
@@ -737,7 +752,7 @@ class ElementTest(parameterized.TestCase):
     mujoco.attach(submujoco)
 
     geoms = mujoco.find_all('geom')
-    self.assertEqual(len(geoms), 6)
+    self.assertLen(geoms, 6)
     self.assertEqual(geoms[0].root, mujoco)
     self.assertEqual(geoms[1].root, mujoco)
     self.assertEqual(geoms[2].root, submujoco)
@@ -746,11 +761,9 @@ class ElementTest(parameterized.TestCase):
     self.assertEqual(geoms[5].root, submujoco)
 
     b_0 = submujoco.find('body', 'b_0')
-    self.assertEqual(len(b_0.find_all('joint')), 6)
-    self.assertEqual(
-        len(b_0.find_all('joint', immediate_children_only=True)), 1)
-    self.assertEqual(
-        len(b_0.find_all('joint', exclude_attachments=True)), 2)
+    self.assertLen(b_0.find_all('joint'), 6)
+    self.assertLen(b_0.find_all('joint', immediate_children_only=True), 1)
+    self.assertLen(b_0.find_all('joint', exclude_attachments=True), 2)
 
   def testFindAllFrameJoints(self):
     root_model = parser.from_path(_TEST_MODEL_XML)
@@ -773,18 +786,20 @@ class ElementTest(parameterized.TestCase):
       subscript_error_regex = 'object is not subscriptable'
     else:
       subscript_error_regex = 'no attribute \'__getitem__\''
-    with self.assertRaisesRegexp(TypeError, subscript_error_regex):
+    with six.assertRaisesRegex(self, TypeError, subscript_error_regex):
       _ = elem['foo']
-    with self.assertRaisesRegexp(TypeError, 'does not support item assignment'):
+    with six.assertRaisesRegex(
+        self, TypeError, 'does not support item assignment'):
       elem['foo'] = 'bar'
-    with self.assertRaisesRegexp(TypeError, 'does not support item deletion'):
+    with six.assertRaisesRegex(
+        self, TypeError, 'does not support item deletion'):
       del elem['foo']
 
   def testSetAndGetAttributes(self):
     mujoco = element.RootElement(model='test')
 
     foo_attribs = dict(name='foo', pos=[1, 2, 3, 4], quat=[0, 1, 0, 0])
-    with self.assertRaisesRegexp(ValueError, 'no more than 3 entries'):
+    with six.assertRaisesRegex(self, ValueError, 'no more than 3 entries'):
       foo = mujoco.worldbody.add('body', **foo_attribs)
 
     # failed creationg should not cause the identifier 'foo' to be registered
@@ -797,7 +812,7 @@ class ElementTest(parameterized.TestCase):
     foo_attribs['name'] = 'bar'
     foo_attribs['pos'] = [1, 2, 3, 4]
     foo_attribs['childclass'] = 'klass'
-    with self.assertRaisesRegexp(ValueError, 'no more than 3 entries'):
+    with six.assertRaisesRegex(self, ValueError, 'no more than 3 entries'):
       foo.set_attributes(**foo_attribs)
 
     # failed assignment should not cause the identifier 'bar' to be registered

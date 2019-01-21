@@ -33,6 +33,7 @@ from dm_control.mujoco.wrapper import mjbindings
 from dm_control.mujoco.wrapper.mjbindings import enums
 import mock
 import numpy as np
+import six
 from six.moves import cPickle
 from six.moves import range
 
@@ -57,6 +58,7 @@ if not os.path.exists(OUT_DIR):
 class CoreTest(parameterized.TestCase):
 
   def setUp(self):
+    super(CoreTest, self).setUp()
     self.model = core.MjModel.from_xml_path(HUMANOID_XML_PATH)
     self.data = core.MjData(self.model)
 
@@ -103,7 +105,7 @@ class CoreTest(parameterized.TestCase):
     data = core.MjData(model)
     with mock.patch.object(core, "logging") as mock_logging:
       mjlib.mj_step(model.ptr, data.ptr)
-    mock_logging.warn.assert_called_once_with(
+    mock_logging.warning.assert_called_once_with(
         "Pre-allocated constraint buffer is full. Increase njmax above 2. "
         "Time = 0.0000.")
 
@@ -240,9 +242,9 @@ class CoreTest(parameterized.TestCase):
     self.assertEqual(name, output_name)
 
   def testNamesIdsExceptions(self):
-    with self.assertRaisesRegexp(core.Error, "does not exist"):
+    with six.assertRaisesRegex(self, core.Error, "does not exist"):
       self.model.name2id("nonexistent_body_name", "body")
-    with self.assertRaisesRegexp(core.Error, "is not a valid object type"):
+    with six.assertRaisesRegex(self, core.Error, "is not a valid object type"):
       self.model.name2id("right_foot", "nonexistent_type_name")
 
   def testNamelessObject(self):
@@ -254,7 +256,7 @@ class CoreTest(parameterized.TestCase):
     self.data.qpos[0] = np.inf
     with mock.patch.object(core, "logging") as mock_logging:
       mjlib.mj_step(self.model.ptr, self.data.ptr)
-    mock_logging.warn.assert_called_once_with(
+    mock_logging.warning.assert_called_once_with(
         "Nan, Inf or huge value in QPOS at DOF 0. The simulation is unstable. "
         "Time = 0.0000.")
 
@@ -372,11 +374,11 @@ class CoreTest(parameterized.TestCase):
     self.assertLess(data.qvel[0], -0.1)
 
   def testDisableFlagsExceptions(self):
-    with self.assertRaisesRegexp(ValueError, "not a valid flag name"):
+    with six.assertRaisesRegex(self, ValueError, "not a valid flag name"):
       with self.model.disable("invalid_flag_name"):
         pass
-    with self.assertRaisesRegexp(ValueError,
-                                 "not a value in `enums.mjtDisableBit`"):
+    with six.assertRaisesRegex(self, ValueError,
+                               "not a value in `enums.mjtDisableBit`"):
       with self.model.disable(-99):
         pass
 
@@ -516,6 +518,7 @@ class AttributesTest(parameterized.TestCase):
     pass
 
   def setUp(self):
+    super(AttributesTest, self).setUp()
     self.model = core.MjModel.from_xml_path(HUMANOID_XML_PATH)
     self.data = core.MjData(self.model)
 

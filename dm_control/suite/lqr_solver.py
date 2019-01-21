@@ -23,11 +23,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-# Internal dependencies.
 from absl import logging
-
 from dm_control.mujoco import wrapper
-
 import numpy as np
 from six.moves import range
 
@@ -72,7 +69,7 @@ def _solve_dare(a, b, q, r):
       break
     p = p_next
   else:
-    logging.warn('DARE solver did not converge')
+    logging.warning('DARE solver did not converge')
   try:
     # Check that the result is symmetric and positive-definite.
     np.linalg.cholesky(p_next)
